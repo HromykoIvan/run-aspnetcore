@@ -66,16 +66,21 @@ namespace AspnetRun.Web.Tests.Services
             var mapper = new Mock<IMapper>();
             var categoryViewModels = new[]
             {
-                new CategoryViewModel()
+                new CategoryViewModel(){ CategoryName = "MyTestCategory"}
             };
             mapper
-                .Setup(x => x.Map<IEnumerable<CategoryViewModel>>(categoriesApp))
+                .Setup(x => x.Map<IEnumerable<CategoryViewModel>>(It.Is<CategoryViewModel[]>(x => x.Length == 1 && x[0].CategoryName == "MyTestCategory")))
                 .Returns(categoryViewModels);
+
+            //mapper
+            //.Setup(x => x.Map<IEnumerable<CategoryViewModel>>(It.IsAny<CategoryViewModel[]>()))
+            //.Returns(categoryViewModels);
             var target = new CategoryPageService(categoryAppService.Object, mapper.Object);
             _ = await target.GetCategories();
 
             categoryAppService
                 .Verify(x => x.GetCategoryList(), Times.Once);
+            //mapper.Verify(x => x.Map<IEnumerable<CategoryViewModel>>(It.Is<CategoryViewModel[]>(x => x.Length == 1 && x[0].CategoryName == "MyTestCategory")), Times.Once);
 
 
         }

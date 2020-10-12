@@ -12,9 +12,11 @@ namespace AspnetRun.Web.HealthChecks
     public class IndexPageHealthCheck : IHealthCheck
     {
         private readonly IHttpContextAccessor _httpContextAccessor;
+        private readonly HttpClientFactory _httpClientFactory;
 
-        public IndexPageHealthCheck(IHttpContextAccessor httpContextAccessor)
+        public IndexPageHealthCheck(IHttpContextAccessor httpContextAccessor, HttpClientFactory httpClienFactory)
         {
+            _httpClientFactory = httpClienFactory ?? throw new ArgumentNullException(nameof(httpClienFactory));
             _httpContextAccessor = httpContextAccessor ?? throw new ArgumentNullException(nameof(httpContextAccessor));
         }
 
@@ -23,9 +25,8 @@ namespace AspnetRun.Web.HealthChecks
             var request = _httpContextAccessor.HttpContext.Request;
             string myUrl = request.Scheme + "://" + request.Host.ToString();
 
-            var client = new HttpClient();
-            var response = await client.GetAsync(myUrl);
-            var pageContents = await response.Content.ReadAsStringAsync();
+            var pageContents = await _httpClientFactory.GetAsync(myUrl);
+            
             if (pageContents.Contains("product1"))
             {
                 return HealthCheckResult.Healthy("The check indicates a healthy result.");
