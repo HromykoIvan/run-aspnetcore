@@ -21,14 +21,15 @@ namespace AspnetRun.Web.Tests.Services
             var httpContextAccessor = new Mock<IHttpContextAccessor>();
             var httpContext = new Mock<HttpContext>();
             var httpRequest = new Mock<HttpRequest>();
+            var httpClientFactory = new Mock<HttpClientFactory>();
+            var hostString = new HostString("google.com");
 
             httpContextAccessor.Setup(x => x.HttpContext).Returns(httpContext.Object);
             httpContext.Setup(x => x.Request).Returns(httpRequest.Object);
-            var hostString = new HostString("google.com");
             httpRequest.Setup(x => x.Scheme).Returns("http - test");
             httpRequest.Setup(x => x.Host).Returns(hostString);
-            var httpClientFactory = new Mock<HttpClientFactory>();
             httpClientFactory.Setup(x => x.GetAsync("http - test://google.com")).ReturnsAsync(string.Empty);
+
             var target = new IndexPageHealthCheck(httpContextAccessor.Object, httpClientFactory.Object);
 
             //act
@@ -36,8 +37,6 @@ namespace AspnetRun.Web.Tests.Services
 
             //assert
             httpClientFactory.Verify(x => x.GetAsync("http - test://google.com"), Times.Once);
-
-
         }
         [Fact]
         public async Task CheckHealthAsync_ReadDataFromResponseIfTrue_Healthy()
@@ -46,21 +45,26 @@ namespace AspnetRun.Web.Tests.Services
             var httpContextAccessor = new Mock<IHttpContextAccessor>();
             var httpContext = new Mock<HttpContext>();
             var httpRequest = new Mock<HttpRequest>();
+            var hostString = new HostString("google.com");
+            var httpClientFactory = new Mock<HttpClientFactory>();
 
             httpContextAccessor.Setup(x => x.HttpContext).Returns(httpContext.Object);
             httpContext.Setup(x => x.Request).Returns(httpRequest.Object);
-            var hostString = new HostString("google.com");
             httpRequest.Setup(x => x.Scheme).Returns("http - test");
             httpRequest.Setup(x => x.Host).Returns(hostString);
-            var httpClientFactory = new Mock<HttpClientFactory>();
             httpClientFactory.Setup(x => x.GetAsync("http - test://google.com")).ReturnsAsync("product1");
+
             var target = new IndexPageHealthCheck(httpContextAccessor.Object, httpClientFactory.Object);
             
             //act
             var result = await target.CheckHealthAsync(null, default);
 
             //assert
-            result.Should().Be(HealthCheckResult.Healthy("The check indicates a healthy result."));
+            using (new AssertionScope())
+            {
+                result.Status.Should().Be(HealthStatus.Healthy);
+                result.Description.Should().Be("The check indicates a healthy result.");
+            }
         }
         [Fact]
         public async Task CheckHealthAsync_ReadDataFromResponseIfFalse_Healthy()
@@ -69,21 +73,26 @@ namespace AspnetRun.Web.Tests.Services
             var httpContextAccessor = new Mock<IHttpContextAccessor>();
             var httpContext = new Mock<HttpContext>();
             var httpRequest = new Mock<HttpRequest>();
+            var hostString = new HostString("google.com");
+            var httpClientFactory = new Mock<HttpClientFactory>();
 
             httpContextAccessor.Setup(x => x.HttpContext).Returns(httpContext.Object);
             httpContext.Setup(x => x.Request).Returns(httpRequest.Object);
-            var hostString = new HostString("google.com");
             httpRequest.Setup(x => x.Scheme).Returns("http - test");
             httpRequest.Setup(x => x.Host).Returns(hostString);
-            var httpClientFactory = new Mock<HttpClientFactory>();
             httpClientFactory.Setup(x => x.GetAsync("http - test://google.com")).ReturnsAsync(String.Empty);
+
             var target = new IndexPageHealthCheck(httpContextAccessor.Object, httpClientFactory.Object);
 
             //act
             var result = await target.CheckHealthAsync(null, default);
 
             //assert
-            result.Should().Be(HealthCheckResult.Unhealthy("The check indicates an unhealthy result."));
+            using (new AssertionScope())
+            {
+                result.Status.Should().Be(HealthStatus.Unhealthy);
+                result.Description.Should().Be("The check indicates an unhealthy result.");
+            }
         }
 
         [Fact]
